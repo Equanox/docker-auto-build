@@ -1,0 +1,220 @@
+#!/bin/sh
+
+# (D)ocker (A)uto (B)uild
+# Author: Matthias Noesner
+
+# dab builds a docker image from a git repo
+
+# dab makes it easy to generate 
+# multiple docker images from one repo
+
+#colors
+red='\033[0;31m'
+green='\033[0;32m'
+blue='\033[0;34m'
+yellow='\033[0;93m'
+cyan='\033[0;96m'
+magenta='\033[0;35m'
+nc='\033[0m'
+
+# A POSIX variable
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+
+# Initialize our own variables:
+output_file=""
+verbose=0
+halt=0
+showcmds=0
+build=0
+dir=${PWD}
+image=""
+
+#static
+dckrfldr="docker"
+
+while getopts "hv:rcbi:" opt; do
+    case "$opt" in
+    h)
+        echo "(D)ocker (A)uto (B)uild - v0.9"
+        echo
+        echo "  -h                      help"
+        echo "  -v                      verbose"
+        echo "  -r                      remove (and stop) container"
+        echo "  -c                      show run cmds"
+        echo "  -b                      build image"
+        echo "  -i \"imagename\"          select image"
+        exit 0
+        ;;
+    v)  verbose=1
+        ;;
+    r)  halt=1
+        ;;
+    b)  build=1
+        ;;
+    i)  image=$OPTARG
+        ;;
+    c)  showcmds=1
+        ;;
+    \?) exit 0
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+[ "$1" = "--" ] && shift
+
+#find repo root
+repopath=$dir
+while [ ! "$path" = "$HOME" ]; do
+    if [ $(find $repopath/.git -type d 2> /dev/null | wc -l) -gt 0  ]; then
+        break
+    fi
+    repopath=${repopath%/*}
+done
+if [ "$repopath" = "$HOME" ] || [ "$repopath" = "" ]; then
+    echo "${red}This is not a git repository${nc}"
+    exit
+fi
+
+#verbose
+if [ "$verbose" -eq "1" ]; then echo "repopath = $repopath"; fi
+
+#check if dockerfolder exists
+found=0
+for file in $repopath/*; do
+    name=${file##*/}
+    if [ "$name" = "$dckrfldr" ]; then
+        found=1
+        break
+    fi
+done
+if [ ! "$found" = "1" ]; then
+    echo "${red}There is no folder named [${dckrfldr}] in this repo${nc}"
+    exit
+fi
+
+#container name given. Search in repo for dckrfldr/containername
+if [ ! "$image" = "" ]; 
+then
+    #check in repopath/dckrfldr if containername exist
+    found=0
+    for file in $repopath/$dckrfldr/*; do
+        filename=${file##*/}
+        if [ "$image" = "$filename" ]; then
+            found=1
+            break
+        fi
+    done
+    if [ "$found" -eq "1" ]; then
+        dir="$repopath/$dckrfldr/$image"
+    else
+        echo "${red}Imagename/Folder [$build] doesn't exist${nc}"
+        exit
+    fi 
+fi
+
+########From this point [dir] is the path to the current working directory########
+########From this point [image] is the name of the folder and image to build##############
+
+#assumption to be inside dckrfldr/containername
+#check if number of files in directory = 1
+#WARNING: Fails with empty directory
+numfiles=$(cd $dir && ls -f * | wc -l)
+if [ "$numfiles" -ne "1" ]; then
+    echo "There has to be exactly one file named 'Dockerfile'"
+    echo "Failed"
+    exit
+fi
+
+#check folder containing Dockerfile
+found=0
+for file in $dir/*; do
+    filename=${file##*/}
+    if [ "$filename" = "Dockerfile" ]; then
+        found=1
+        break     
+    fi
+done
+if [ "$found" -eq "0" ]; then
+    echo "${red}There has to be a file named Dockerfile in $dir ${nc}"
+fi
+
+if [ "$image" = "" ]; then
+    image=${dir##*/}
+fi
+########From this point [image] is the checked name of the folder and image to build##############
+
+#built image
+if [ "$build" = "1" ]; then
+    #create tmp directory for autobuild
+    if [ ! -d "$HOME/TMP" ]; then
+        $(mkdir $HOME/TMP)
+    fi
+
+    if [ -d "$HOME/TMP/docker_autobuild" ]; then
+        $(rm -rf $HOME/TMP/docker_autobuild)
+    fi
+    $(mkdir $HOME/TMP/docker_autobuild)
+    
+
+    #cp repo
+    $(cp -r $repopath $HOME/TMP/docker_autobuild/$image)
+    #cp dockerfile
+    $(cp $dir/Dockerfile $HOME/TMP/docker_autobuild/Dockerfile)
+
+    #docker build
+    echo "${green}Building image [$image], might take some time ${nc}"
+    echo "sudo docker build -t $image $HOME/TMP/docker_autobuild"
+    echo "$(sudo docker build -t $image $HOME/TMP/docker_autobuild)"
+fi
+
+#stop and rm container if running, cp run cmd to clipboard
+if [ "$halt" -eq "1" ]; then
+    if [ $(sudo docker ps -a | grep $image | wc -l) -gt 0 ]; then
+        echo "${green}stop and remove container [$image] ${nc}"
+        echo "$(sudo docker stop -t=0 $image)" #stop container
+        echo "$(sudo docker rm $image)"  #rm container
+    else
+        echo "${yellow}There is no container named [$image], removing not necessary${nc}"
+    fi
+    #echo $out | xclip
+    #echo $out | xclip -sel clip
+fi
+
+### parse dockerfile for run cmds
+# $1 = string, $2 = string to find, $3 = container name
+Parse() {
+    rp=`echo $1 | grep $2 | sed s/$2//g | sed 's/^[ \t]*//' | sed "s/%name%/$3/g"`
+    echo "$rp"
+}
+while read line
+do
+    ret=$(Parse "$line" "\#RUP" "$image")
+    if [ ! "$ret" = "" ]; then
+        rp=$ret
+    fi
+    ret=$(Parse "$line" "\#RUD" "$image")
+    if [ ! "$ret" = "" ]; then
+        rd=$ret
+    fi  
+done < "$dir/Dockerfile"
+
+if [ "$showcmds" -eq 1 ]; then
+    echo
+    echo "${green}Common used run commands of the generated docker image${nc}"
+    echo
+    echo "${nc}Production:${nc}"
+    echo "${cyan}$rp${nc}"
+    echo "${nc}Develop:${nc}"
+    echo "${cyan}$rd${nc}"
+fi
+
+#clean up
+$(rm -rf $HOME/TMP/docker_autobuild)
+
+echo "${green}Finished, gracefully${nc}"
+
+exit
+# End of file
+

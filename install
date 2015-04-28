@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#install xclip for dab
+#echo "$(sudo apt-get -y install xclip)"
+
+#add to /usr/local/bin
+echo "$(sudo cp dab /usr/local/bin/dab)"
+echo "$(sudo chmod +x /usr/local/bin/dab)"
