@@ -16,7 +16,7 @@ The repo is tested on ubuntu 14.04 LTS. But should work on all UNIX systems
 
 <h2>Installation</h2>
 ```
-git clone https://github.com/Equanox/dab
+git clone https://github.com/Equanox/docker-auto-build
 cd dab
 sudo chmod +x install.sh dab
 sudo ./install.sh
