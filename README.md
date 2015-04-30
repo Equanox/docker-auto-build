@@ -81,7 +81,8 @@ So you just have to copy & paste the run cmd to restart your container
 <h2>Contribute</h2>
 Please, only commit to the develop branch. The master branch  always contains a stable version.
 
-
+<h2>License</h2>
+This Software is released under the [MIT license](http://opensource.org/licenses/mit-license.php).
 
 
 
