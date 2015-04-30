@@ -32,7 +32,7 @@ image=""
 #static
 dckrfldr="docker"
 
-while getopts "hv:rcbi:" opt; do
+while getopts "hvrcbi:" opt; do
     case "$opt" in
     h)
         echo "(D)ocker (A)uto (B)uild - v0.9"
@@ -60,13 +60,17 @@ while getopts "hv:rcbi:" opt; do
     esac
 done
 
+if [ $OPTIND -eq 0 ]; then 
+    build=1; 
+fi
+
 shift $((OPTIND-1))
 
 [ "$1" = "--" ] && shift
 
 #find repo root
 repopath=$dir
-while [ ! "$path" = "$HOME" ]; do
+while [ ! "$repopath" = "$HOME" ]; do
     if [ $(find $repopath/.git -type d 2> /dev/null | wc -l) -gt 0  ]; then
         break
     fi
