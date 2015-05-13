@@ -81,6 +81,8 @@ if [ "$repopath" = "$HOME" ] || [ "$repopath" = "" ]; then
     exit
 fi
 
+########From this point [repopath] is the path to the repo root########
+
 #verbose
 if [ "$verbose" -eq "1" ]; then echo "repopath = $repopath"; fi
 
@@ -163,7 +165,7 @@ if [ "$build" = "1" ]; then
     
 
     #cp repo
-    $(cp -r $repopath $HOME/TMP/docker_autobuild/$image)
+    $(cp -r $repopath $HOME/TMP/docker_autobuild/${repopath##*/})
     #cp dockerfile
     $(cp $dir/Dockerfile $HOME/TMP/docker_autobuild/Dockerfile)
 
