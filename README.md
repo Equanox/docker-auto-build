@@ -18,8 +18,8 @@ The repo is tested on ubuntu 14.04 LTS. But should work on all UNIX systems
 ```
 git clone https://github.com/Equanox/docker-auto-build
 cd docker-auto-build
-sudo chmod +x install.sh dab
-sudo ./install.sh
+sudo chmod +x install dab
+sudo ./install
 ```
 
 <h2>Example</h2>
