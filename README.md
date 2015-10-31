@@ -8,7 +8,7 @@
 This cmd line tool is great when working without a docker registry. All dockerfiles are stored inside a git repository in a special folder named docker. You can simply include  your private and public git repo using a ADD cmd inside your dockerfile
 
 <h2>Requirements</h2>
-The repo is tested on ubuntu 14.04 LTS. But should work on all UNIX systems 
+The repo is tested on ubuntu 14.04 LTS. But should work on all UNIX systems
 
     docker
     git
@@ -44,14 +44,14 @@ to stop+remove the running container and rebuilt your image. This gives you a su
 
 
 <h2>Get Started</h2>
-Choose an existing git repo 
+Choose an existing git repo
 
     * Create a folder named docker in the root folder of the repo
     * Create a folder named image (or any other name)  inside the docker folder
     * copy Dockerfile inside the folder named image
 
 Now you can build your docker image from everywhere inside your git repo.
-    
+
 ```
 sudo dab -b -i "imagename"
 ```
@@ -63,11 +63,12 @@ sudo dab -b
 
 To include your repo in your docker image just add the line
 ```
-ADD image somefolder
+ADD repo/root somefolder
+e.g. ADD dab dab
 ```
 to your Dockerfile.
 
-When you need to replace a running container with the one from a new build 
+When you need to replace a running container with the one from a new build
 ```
 sudo dab -b -i "imagename" -r -c
 ```
@@ -83,11 +84,3 @@ Please, only commit to the develop branch. The master branch  always contains a 
 
 <h2>License</h2>
 This Software is released under the [MIT license](http://opensource.org/licenses/mit-license.php).
-
-
-
-
-
-
-
-

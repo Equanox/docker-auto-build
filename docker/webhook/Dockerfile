@@ -8,7 +8,7 @@ RUN apt-get -y upgrade -y && apt-get -y update
 RUN apt-get -y install python3-pip
 RUN pip3 install tornado
 
-ADD webhook dab 
+ADD dab dab 
 EXPOSE 9001 9001
 
 ENTRYPOINT python3 dab/examples/server.py
